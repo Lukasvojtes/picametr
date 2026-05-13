@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="cs" class="antialiased selection:bg-purple-500/30">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radimova Latina | Stav nouze: Píča metr</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        @media (min-width: 769px) {
+            * {
+                cursor: none !important;
+            }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #05020a;
+            color: #ffffff;
+            overflow-x: hidden;
+            /* Povolí vertikální scroll, pokud je monitor moc malý */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-h: 100vh;
+        }
+
+        /* Ambientní mřížka */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: -3;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Hlavní hezký gradient na pozadí */
+        #dynamic-background-gradient {
+            position: fixed;
+            inset: 0;
+            z-index: -4;
+            opacity: 0.15;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Vlastní trail kurzor */
+        .cursor-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .cursor-dot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+            background: var(--dynamic-accent, #ef4444);
+            box-shadow: 0 0 20px var(--dynamic-accent, #ef4444);
+        }
+
+        .cursor-main {
+            width: 16px;
+            height: 16px;
+            z-index: 2;
+            background: #fff;
+        }
+
+        .cursor-trail {
+            width: 6px;
+            height: 6px;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .cursor-wrapper {
+                display: none;
+            }
+        }
+
+        .bebas {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.02em;
+        }
+
+        /* Karta (bez 3D naklánění, zmenšená) */
+        .card-container {
+            width: 100%;
+            max-width: 580px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .card-item {
+            position: relative;
+            background: rgba(15, 7, 26, 0.6);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Záře v kartě sledující myš */
+        .card-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), var(--dynamic-card-glow, rgba(239, 68, 68, 0.15)), transparent 40%);
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card-item:hover .card-glow {
+            opacity: 1;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Stylování posuvníku - lehce zmenšené z původního */
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            outline: none;
+            margin: 25px 0 15px 0;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid var(--dynamic-accent, #ef4444);
+            box-shadow: 0 0 25px var(--dynamic-accent, #ef4444);
+            transition: transform 0.2s cubic-bezier(0.25, 1.5, 0.5, 1);
+        }
+
+        .slider:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+
+        /* Animace pro load */
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+    </style>
+</head>
+
+<body class="py-12 px-4 md:px-6">
+
+    <div id="dynamic-background-gradient"></div>
+
+    <div class="bg-grid"></div>
+
+    <div class="cursor-wrapper">
+        <div class="cursor-dot cursor-main"></div>
+        <div class="cursor-dot cursor-trail"></div>
+        <div class="cursor-dot cursor-trail"></div>
+        <div class="cursor-dot cursor-trail"></div>
+    </div>
+
+    <main class="w-full flex justify-center">
+        <div class="card-container reveal-up">
+
+            <div
+                class="absolute -top-6 right-0 md:-right-4 z-50 px-6 py-2 rounded-full font-black uppercase tracking-widest text-base md:text-xl border-2 border-purple-500/40 bg-[#0a0314] shadow-[0_0_30px_rgba(168,85,247,0.5)] text-purple-400 rotate-3">
+                Stav nouze: Píča metr
+            </div>
+
+            <div class="card-item rounded-[2.5rem] p-8 md:p-12 mt-4">
+                <div class="card-glow"></div>
+
+                <div class="card-content flex flex-col items-center text-center">
+                    <h1 class="bebas text-3xl md:text-4xl text-gray-400 uppercase tracking-wide leading-none">Jak moc
+                        Radim</h1>
+                    <h2 class="bebas text-5xl md:text-6xl uppercase tracking-widest text-transparent bg-clip-text transition-all duration-300"
+                        id="title-accent">Seká latinu?</h2>
+
+                    <div class="relative w-full flex justify-center items-center mt-6">
+                        <div id="value-display"
+                            class="text-[7rem] md:text-[9rem] leading-none bebas text-white transition-all duration-300">
+                            0
+                        </div>
+                    </div>
+
+                    <input type="range" min="0" max="10" value="0" class="slider" id="latinaSlider">
+
+                    <div
+                        class="flex justify-between w-full font-black uppercase tracking-[0.25em] text-[10px] md:text-xs text-gray-500 mb-6 px-2">
+                        <span class="transition-colors duration-300" id="label-min">Průšvih (0)</span>
+                        <span class="transition-colors duration-300" id="label-max">Vzorný (10)</span>
+                    </div>
+
+                    <div
+                        class="w-full bg-[#0a0612]/70 border border-white/5 rounded-2xl p-5 min-h-[90px] flex items-center justify-center shadow-xl shadow-black/40">
+                        <p id="comment-display"
+                            class="text-lg md:text-xl text-gray-200 font-medium italic leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        gsap.to('.reveal-up', { y: 0, opacity: 1, duration: 1.4, ease: "expo.out", delay: 0.2 });
+
+        const allCursorDots = document.querySelectorAll('.cursor-dot');
+        if (window.innerWidth > 768) {
+            window.addEventListener('mousemove', (e) => {
+                gsap.to(allCursorDots, {
+                    x: e.clientX,
+                    y: e.clientY,
+                    duration: 0.5,
+                    stagger: 0.05,
+                    ease: "power2.out"
+                });
+            });
+        }
+
+        const card = document.querySelector('.card-item');
+        if (window.innerWidth > 768) {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        }
+
+        const radimComments = [
+            "Už to není Radim, to je zemský kulatý král všech píč. Čistá katastrofa.",
+            "Absolutní šok a hrůza. Radim, ty jsi fakt vemeno.",
+            "Tohle už ani Google Translator nepřeloží, tak moc je to v píči.",
+            "Skandál! Radim právě podepsal pakt s ďáblem.",
+            "Standardní Radimovo selhání. Nic nového.",
+            "Průměr. Obvyklý počet lidí, co dnes nasral.",
+            "Někdo musel Radimovi vyhrožovat smrtí, aby se dnes snažil.",
+            "Překvapivě se dnes chová jako normální bytost.",
+            "Co se stalo? Koupil ti někdo kytku? Jsi divnej.",
+            "Zázrak se stal. Radim sekal latinu tak moc, až je to podezřelé.",
+            "Radim, ty jsi slandered? Jsi nemocný? Kde je pravý Radim?"
+        ];
+
+        const slider = document.getElementById("latinaSlider");
+        const output = document.getElementById("value-display");
+        const titleAccent = document.getElementById("title-accent");
+        const bgGradientWrapper = document.getElementById("dynamic-background-gradient");
+        const commentDisplay = document.getElementById("comment-display");
+        const labelMin = document.getElementById("label-min");
+        const labelMax = document.getElementById("label-max");
+
+        function updatePageColors() {
+            const val = parseInt(slider.value);
+            output.innerHTML = val;
+
+            const hue = val * 12;
+
+            const solidAccent = `hsl(${hue}, 90%, 60%)`;
+            const neonAccent = `hsl(${hue}, 100%, 70%)`;
+            const dimAccent = `hsla(${hue}, 80%, 50%, 0.15)`;
+
+            const bgGlowIntense = `hsl(${hue}, 80%, 40%)`;
+            const bgGlowSecondary = `hsl(${hue + 10}, 70%, 30%)`;
+
+            bgGradientWrapper.style.backgroundImage = `radial-gradient(100% 100% at center, ${bgGlowIntense} 0%, ${bgGlowSecondary} 50%, #05020a 100%)`;
+
+            document.documentElement.style.setProperty('--dynamic-accent', solidAccent);
+            card.style.setProperty('--dynamic-card-glow', dimAccent);
+
+            titleAccent.style.backgroundImage = `linear-gradient(90deg, ${solidAccent}, ${neonAccent})`;
+            output.style.textShadow = `0 0 40px ${solidAccent}, 0 0 15px rgba(255,255,255,0.4)`;
+
+            commentDisplay.innerText = radimComments[val];
+            gsap.fromTo(commentDisplay, { opacity: 0, y: 5 }, { opacity: 1, y: 0, duration: 0.2, delay: 0.05 });
+
+            gsap.to(output, { scale: 1 + (val * 0.02), duration: 0.3, ease: "back.out(1.7)" });
+
+            if (val <= 2) {
+                labelMin.style.color = solidAccent;
+                labelMin.style.textShadow = `0 0 10px ${solidAccent}`;
+            } else { labelMin.style.color = ""; labelMin.style.textShadow = "none"; }
+
+            if (val >= 8) {
+                labelMax.style.color = solidAccent;
+                labelMax.style.textShadow = `0 0 10px ${solidAccent}`;
+            } else { labelMax.style.color = ""; labelMax.style.textShadow = "none"; }
+        }
+
+        slider.addEventListener('input', updatePageColors);
+        updatePageColors();
+    </script>
+</body>
+
+</html>
