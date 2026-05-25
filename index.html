@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radimova Latina | Stav nouze</title>
+    <title>Radimův Řídící Panel | Kritický stav</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -12,373 +12,312 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 
     <style>
-        @media (min-width: 769px) {
-            * {
-                cursor: none !important;
-            }
-        }
+        @media (min-width: 769px) { * { cursor: none !important; } }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #05020a;
+            background-color: #030108;
             color: #ffffff;
             overflow-x: hidden;
             margin: 0;
             padding: 0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Ambientní mřížka */
+        /* Ambientní animované pozadí */
         .bg-grid {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
+            inset: 0;
             z-index: -3;
-            background-image:
-                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 20s linear infinite;
+            mask-image: linear-gradient(to bottom, transparent, black 80%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 40%, black 100%);
         }
 
-        /* Hlavní hezký gradient na pozadí */
-        #dynamic-background-gradient {
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 40px; }
+        }
+
+        /* Globální dynamický gradient podle slideru */
+        #dynamic-bg {
             position: fixed;
             inset: 0;
             z-index: -4;
-            opacity: 0.15;
-            transition: opacity 0.5s ease;
+            background: radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.15) 0%, transparent 70%);
+            transition: background 0.5s ease;
         }
 
-        /* Vlastní trail kurzor */
-        .cursor-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            z-index: 9999;
-        }
-
+        /* Vlastní kurzor */
+        .cursor-wrapper { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; }
         .cursor-dot {
-            position: absolute;
-            top: 0;
-            left: 0;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: opacity 0.3s;
+            position: absolute; top: 0; left: 0; border-radius: 50%;
+            transform: translate(-50%, -50%); transition: opacity 0.3s;
             background: var(--dynamic-accent, #ef4444);
             box-shadow: 0 0 20px var(--dynamic-accent, #ef4444);
         }
+        .cursor-main { width: 12px; height: 12px; z-index: 2; background: #fff; }
+        .cursor-trail { width: 4px; height: 4px; opacity: 0.4; z-index: 1; }
 
-        .cursor-main {
-            width: 16px;
-            height: 16px;
-            z-index: 2;
-            background: #fff;
+        .bebas { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.03em; }
+
+        /* Ticker s varováním */
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background: #ef4444; color: black;
+            padding: 4px 0; font-weight: 900; text-transform: uppercase; font-size: 0.8rem;
+            letter-spacing: 0.1em; display: flex; white-space: nowrap; z-index: 50; position: relative;
         }
+        .ticker { display: inline-block; animation: ticker 25s linear infinite; }
+        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
 
-        .cursor-trail {
-            width: 6px;
-            height: 6px;
-            opacity: 0.5;
-            z-index: 1;
-        }
-
-        @media (max-width: 768px) {
-            .cursor-wrapper {
-                display: none;
-            }
-        }
-
-        .bebas {
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 0.02em;
-        }
-
-        /* Karta */
-        .card-container {
-            width: 100%;
-            max-width: 580px;
-            z-index: 10;
-            position: relative;
-        }
-
-        .card-item {
-            position: relative;
-            background: rgba(15, 7, 26, 0.6);
-            backdrop-filter: blur(30px);
+        /* Moduly (karty) */
+        .dashboard-module {
+            background: rgba(12, 6, 20, 0.7);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
-        }
-
-        /* Záře v kartě sledující myš */
-        .card-glow {
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), var(--local-glow, rgba(239, 68, 68, 0.15)), transparent 40%);
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .card-item:hover .card-glow {
-            opacity: 1;
-        }
-
-        .card-content {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8);
             position: relative;
-            z-index: 10;
+            overflow: hidden;
         }
 
-        /* Stylování posuvníku */
+        .module-glow {
+            position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0), var(--local-glow, rgba(255,255,255,0.05)), transparent 40%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .dashboard-module:hover .module-glow { opacity: 1; }
+
+        /* Vlastní slider */
         .slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 12px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.08);
-            outline: none;
-            margin: 25px 0 15px 0;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
+            -webkit-appearance: none; width: 100%; height: 8px; border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1); outline: none; margin: 20px 0;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5); cursor: pointer; position: relative; z-index: 10;
         }
-
         .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: #fff;
-            border: 4px solid var(--dynamic-accent, #ef4444);
-            box-shadow: 0 0 25px var(--dynamic-accent, #ef4444);
-            transition: transform 0.2s cubic-bezier(0.25, 1.5, 0.5, 1);
+            -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%;
+            background: #fff; border: 4px solid var(--dynamic-accent, #ef4444);
+            box-shadow: 0 0 20px var(--dynamic-accent, #ef4444); transition: transform 0.2s cubic-bezier(0.25, 1.5, 0.5, 1);
         }
+        .slider:active::-webkit-slider-thumb { transform: scale(1.2); }
 
-        .slider:active::-webkit-slider-thumb {
-            transform: scale(1.1);
-        }
+        /* Výseče pro kolo */
+        .wheel-slice-text { text-shadow: 1px 1px 3px rgba(0,0,0,0.9); }
 
-        /* Animace pro load */
-        .reveal-up {
-            opacity: 0;
-            transform: translateY(40px);
-        }
-
-        /* Kolo výmluv CSS */
-        .wheel-slice-text {
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
+        /* Úvodní animace */
+        .stagger-up { opacity: 0; transform: translateY(30px); }
     </style>
 </head>
 
-<body class="py-12 px-4 md:px-8">
+<body>
+    <div class="ticker-wrap" id="top-ticker">
+        <div class="ticker">
+            <span>⚠️ SYSTÉMOVÉ VAROVÁNÍ: DETEKOVÁNA VYSOKÁ HLADINA RADIMA ⚠️ OČEKÁVEJTE KOKOTINY ⚠️ DOPORUČUJEME ZVÝŠIT OPATRNOST ⚠️ SYSTÉMOVÉ VAROVÁNÍ: DETEKOVÁNA VYSOKÁ HLADINA RADIMA ⚠️ OČEKÁVEJTE KOKOTINY ⚠️ DOPORUČUJEME ZVÝŠIT OPATRNOST ⚠️</span>
+        </div>
+    </div>
 
-    <div id="dynamic-background-gradient"></div>
     <div class="bg-grid"></div>
+    <div id="dynamic-bg"></div>
 
-    <div class="cursor-wrapper">
+    <div class="cursor-wrapper hidden md:block">
         <div class="cursor-dot cursor-main"></div>
-        <div class="cursor-dot cursor-trail"></div>
         <div class="cursor-dot cursor-trail"></div>
         <div class="cursor-dot cursor-trail"></div>
     </div>
 
-    <main class="w-full max-w-[1400px] mx-auto min-h-[85vh] flex flex-col xl:flex-row items-center justify-center gap-10 xl:gap-16">
+    <main class="flex-grow w-full max-w-[1200px] mx-auto px-4 py-8 md:py-16 flex flex-col items-center justify-center relative z-10">
         
-        <div class="card-container reveal-up w-full">
-            <div class="absolute -top-6 right-0 md:-right-4 z-50 px-6 py-2 rounded-full font-black uppercase tracking-widest text-sm md:text-lg border-2 border-purple-500/40 bg-[#0a0314] shadow-[0_0_30px_rgba(168,85,247,0.5)] text-purple-400 rotate-3">
-                Stav nouze: Píča metr
+        <div class="text-center mb-12 stagger-up w-full">
+            <div class="inline-block px-4 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-xs font-bold uppercase tracking-[0.3em] text-gray-400 mb-6">
+                Centrální analytický systém
             </div>
-
-            <div class="card-item rounded-[2.5rem] p-8 md:p-12 mt-4" id="card-picametr">
-                <div class="card-glow"></div>
-
-                <div class="card-content flex flex-col items-center text-center">
-                    <h1 class="bebas text-3xl md:text-4xl text-gray-400 uppercase tracking-wide leading-none">Jak moc Radim</h1>
-                    <h2 class="bebas text-5xl md:text-6xl uppercase tracking-widest text-transparent bg-clip-text transition-all duration-300" id="title-accent">Seká latinu?</h2>
-
-                    <div class="relative w-full flex justify-center items-center mt-6">
-                        <div id="value-display" class="text-[7rem] md:text-[9rem] leading-none bebas text-white transition-all duration-300">0</div>
-                    </div>
-
-                    <input type="range" min="0" max="10" value="0" class="slider" id="latinaSlider">
-
-                    <div class="flex justify-between w-full font-black uppercase tracking-[0.25em] text-[10px] md:text-xs text-gray-500 mb-6 px-2">
-                        <span class="transition-colors duration-300" id="label-min">Průšvih (0)</span>
-                        <span class="transition-colors duration-300" id="label-max">Vzorný (10)</span>
-                    </div>
-
-                    <div class="w-full bg-[#0a0612]/70 border border-white/5 rounded-2xl p-5 min-h-[90px] flex items-center justify-center shadow-xl shadow-black/40">
-                        <p id="comment-display" class="text-base md:text-lg text-gray-200 font-medium italic leading-relaxed"></p>
-                    </div>
-                </div>
-            </div>
+            <h1 class="bebas text-5xl md:text-7xl lg:text-8xl tracking-wide uppercase drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                Pojďme zjistit, jak moc <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-purple-500 animate-pulse" id="hero-name">Je Radim v Píči</span>
+            </h1>
+            <p class="mt-6 text-gray-400 text-sm md:text-base max-w-2xl mx-auto font-medium leading-relaxed">
+                Nebo jinak... pojďme se tvářit, že to bude dneska dobrý. Změř jeho aktuální stav latiny a pro jistotu si hned vytoč, na co se vymluví, až to zase posere.
+            </p>
         </div>
 
-        <div class="card-container reveal-up w-full" style="animation-delay: 0.2s">
-            <div class="absolute -top-6 left-0 md:-left-4 z-50 px-6 py-2 rounded-full font-black uppercase tracking-widest text-sm md:text-lg border-2 border-pink-500/40 bg-[#0a0314] shadow-[0_0_30px_rgba(236,72,153,0.5)] text-pink-400 -rotate-3">
-                Kolo záchrany
-            </div>
+        <div class="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+            
+            <div class="dashboard-module rounded-[2rem] p-8 md:p-10 stagger-up flex flex-col justify-between" id="module-picametr">
+                <div class="module-glow"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+                        <h2 class="bebas text-2xl md:text-3xl tracking-widest text-gray-300">Stav Nouze</h2>
+                        <span class="px-3 py-1 bg-black/50 border border-white/10 rounded font-mono text-xs text-gray-500">MOD-01</span>
+                    </div>
 
-            <div class="card-item rounded-[2.5rem] p-8 md:p-12 mt-4" style="--local-glow: rgba(236,72,153,0.15)">
-                <div class="card-glow"></div>
-
-                <div class="card-content flex flex-col items-center text-center">
-                    <h1 class="bebas text-3xl md:text-4xl text-gray-400 uppercase tracking-wide leading-none">Vytoč si</h1>
-                    <h2 class="bebas text-5xl md:text-6xl uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-500 mb-8">Radimovu Výmluvu</h2>
-
-                    <div class="relative w-64 h-64 md:w-80 md:h-80 mb-8 flex justify-center items-center">
-                        <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-pink-500 z-20 drop-shadow-[0_0_15px_rgba(236,72,153,1)]"></div>
+                    <div class="flex flex-col items-center text-center">
+                        <div class="text-sm font-bold uppercase tracking-[0.2em] text-gray-500 mb-2">Index průseru</div>
+                        <div id="value-display" class="text-[6rem] md:text-[8rem] leading-none bebas transition-all duration-300">0</div>
                         
-                        <div id="wheel" class="w-full h-full rounded-full border-4 border-pink-500/50 overflow-hidden relative shadow-[0_0_40px_rgba(236,72,153,0.3)]">
+                        <div class="w-full mt-4">
+                            <input type="range" min="0" max="10" value="0" class="slider w-full" id="latinaSlider">
+                            <div class="flex justify-between w-full font-black uppercase tracking-[0.2em] text-[10px] text-gray-500 px-2 mt-2">
+                                <span id="label-min" class="transition-colors duration-300">Totální Kokot (0)</span>
+                                <span id="label-max" class="transition-colors duration-300">Andílek (10)</span>
                             </div>
-
-                        <div class="absolute w-12 h-12 bg-[#05020a] rounded-full z-10 border-4 border-pink-500/50 shadow-[0_0_15px_rgba(0,0,0,0.8)]"></div>
-                    </div>
-
-                    <button id="spin-btn" class="mb-6 px-10 py-4 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-black rounded-full uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:shadow-[0_0_30px_rgba(236,72,153,0.8)] hover:scale-105 active:scale-95 z-10 relative">
-                        Losuj kokotinu
-                    </button>
-
-                    <div class="w-full bg-[#0a0612]/70 border border-white/5 rounded-2xl p-5 min-h-[90px] flex items-center justify-center shadow-xl shadow-black/40 z-10 relative">
-                        <p id="excuse-display" class="text-base md:text-lg text-gray-200 font-medium italic leading-relaxed">Zatoč si, ať víš, proč Radim zase dělá Zagorku.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
+                <div class="relative z-10 mt-8 bg-black/40 border border-white/5 rounded-xl p-4 min-h-[80px] flex items-center justify-center">
+                    <div class="absolute -top-3 left-4 bg-[#0a0514] px-2 text-[10px] uppercase tracking-wider text-gray-500 font-bold">Diagnóza</div>
+                    <p id="comment-display" class="text-sm md:text-base text-gray-200 font-medium italic text-center"></p>
+                </div>
+            </div>
+
+            <div class="dashboard-module rounded-[2rem] p-8 md:p-10 stagger-up flex flex-col justify-between" style="--local-glow: rgba(236,72,153,0.15)">
+                <div class="module-glow"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+                        <h2 class="bebas text-2xl md:text-3xl tracking-widest text-pink-400">Kolo Záchrany</h2>
+                        <span class="px-3 py-1 bg-black/50 border border-white/10 rounded font-mono text-xs text-pink-500/50">MOD-02</span>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-56 h-56 md:w-64 md:h-64 mb-8 flex justify-center items-center drop-shadow-[0_0_30px_rgba(236,72,153,0.2)]">
+                            <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[24px] border-t-pink-500 z-20 filter drop-shadow-[0_0_10px_rgba(236,72,153,1)]"></div>
+                            
+                            <div id="wheel" class="w-full h-full rounded-full border-[6px] border-[#1a0b2e] overflow-hidden relative shadow-inner">
+                                </div>
+
+                            <div class="absolute w-10 h-10 bg-[#0a0514] rounded-full z-10 border-4 border-pink-500 shadow-[0_0_15px_rgba(0,0,0,0.8)]"></div>
+                        </div>
+
+                        <button id="spin-btn" class="w-full py-4 bg-[#1a0b2e] border border-pink-500/50 hover:bg-pink-600 hover:border-pink-400 text-white font-black rounded-xl uppercase tracking-[0.2em] transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.2)] hover:shadow-[0_0_30px_rgba(236,72,153,0.6)] hover:scale-[1.02] active:scale-[0.98]">
+                            Generovat výmluvu
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative z-10 mt-6 bg-black/40 border border-white/5 rounded-xl p-4 min-h-[80px] flex items-center justify-center">
+                    <div class="absolute -top-3 left-4 bg-[#0a0514] px-2 text-[10px] uppercase tracking-wider text-pink-500/70 font-bold">Výstup</div>
+                    <p id="excuse-display" class="text-sm md:text-base text-gray-300 font-medium italic text-center">Zatoč, ať víš, co dneska uslyšíš.</p>
+                </div>
+            </div>
+
+        </div>
     </main>
 
     <script>
-        // --- 1. GLOBÁLNÍ ANIMACE A KURZOR ---
-        gsap.to('.reveal-up', { y: 0, opacity: 1, duration: 1.4, ease: "expo.out", stagger: 0.2 });
+        // Úvodní animace
+        gsap.to('.stagger-up', { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", stagger: 0.2, delay: 0.2 });
 
+        // Kurzor a Glow efekty karet
         const allCursorDots = document.querySelectorAll('.cursor-dot');
+        const modules = document.querySelectorAll('.dashboard-module');
+        
         if (window.innerWidth > 768) {
             window.addEventListener('mousemove', (e) => {
-                gsap.to(allCursorDots, {
-                    x: e.clientX,
-                    y: e.clientY,
-                    duration: 0.5,
-                    stagger: 0.05,
-                    ease: "power2.out"
-                });
+                gsap.to(allCursorDots, { x: e.clientX, y: e.clientY, duration: 0.4, stagger: 0.05, ease: "power2.out" });
             });
 
-            // 3D glow efekt pro obě karty
-            const cards = document.querySelectorAll('.card-item');
-            cards.forEach(card => {
-                card.addEventListener('mousemove', e => {
-                    const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    card.style.setProperty('--mouse-x', `${x}px`);
-                    card.style.setProperty('--mouse-y', `${y}px`);
+            modules.forEach(mod => {
+                mod.addEventListener('mousemove', e => {
+                    const rect = mod.getBoundingClientRect();
+                    mod.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                    mod.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
                 });
             });
         }
 
-        // --- 2. LOGIKA PRO PÍČA METR ---
+        // --- PÍČA METR LOGIKA ---
         const radimComments = [
-            "Už to není Radim, to je zemský kulatý král všech píč. Čistá katastrofa.",
-            "Absolutní šok a hrůza. Radim, ty jsi fakt vemeno.",
-            "Tohle už ani Google Translator nepřeloží, tak moc je to v píči.",
-            "Skandál! Radim právě podepsal pakt s ďáblem.",
-            "Standardní Radimovo selhání. Nic nového.",
-            "Průměr. Obvyklý počet lidí, co dnes nasral.",
-            "Někdo musel Radimovi vyhrožovat smrtí, aby se dnes snažil.",
-            "Překvapivě se dnes chová jako normální bytost.",
-            "Co se stalo? Koupil ti někdo kytku? Jsi divnej.",
-            "Zázrak se stal. Radim sekal latinu tak moc, až je to podezřelé.",
-            "Radim, ty jsi slandered? Jsi nemocný? Kde je pravý Radim?"
+            "Zavolejte exorcistu. Radim je dneska čiré zlo a nemluví lidskou řečí.",
+            "Absolutní kolaps systému. Radim právě zklamal i lidi, co ho neznají.",
+            "Je to v prdeli, radši dělej mrtvýho brouka, než si tě všimne.",
+            "Klasická Radimova křivka zklamání. Ještě to není dno, ale padáme.",
+            "Takovej ten Radimův standard. Sere tě, ale už jsi zvyklej.",
+            "Neurazí, nenadchne. Proplouvá jako hovno pod splavem.",
+            "Hele, dneska to jde. Dokonce i pozdravil, aniž by tě chtěl okrást.",
+            "Podezřelý klid zbraní. Radim něco chystá, dej si bacha.",
+            "Dneska má svatozář. Určitě něco hroznýho rozbil a bojí se to říct.",
+            "To není možný. Radim seká latinu. Kontrola matrixu!",
+            "Kdo jsi a co jsi udělal s Radimem?! Absolutní jednorožec."
         ];
 
         const slider = document.getElementById("latinaSlider");
         const output = document.getElementById("value-display");
-        const titleAccent = document.getElementById("title-accent");
-        const bgGradientWrapper = document.getElementById("dynamic-background-gradient");
+        const dynamicBg = document.getElementById("dynamic-bg");
         const commentDisplay = document.getElementById("comment-display");
         const labelMin = document.getElementById("label-min");
         const labelMax = document.getElementById("label-max");
-        const cardPicametr = document.getElementById("card-picametr");
+        const ticker = document.getElementById("top-ticker");
+        const modulePicametr = document.getElementById("module-picametr");
 
         function updatePageColors() {
             const val = parseInt(slider.value);
             output.innerHTML = val;
+            
             const hue = val * 12; // 0 = červená, 120 = zelená
-
             const solidAccent = `hsl(${hue}, 90%, 60%)`;
-            const neonAccent = `hsl(${hue}, 100%, 70%)`;
             const dimAccent = `hsla(${hue}, 80%, 50%, 0.15)`;
 
-            const bgGlowIntense = `hsl(${hue}, 80%, 40%)`;
-            const bgGlowSecondary = `hsl(${hue + 10}, 70%, 30%)`;
-
-            // Pozadí a kurzor
-            bgGradientWrapper.style.backgroundImage = `radial-gradient(100% 100% at center, ${bgGlowIntense} 0%, ${bgGlowSecondary} 50%, #05020a 100%)`;
+            // Dynamický vzhled
             document.documentElement.style.setProperty('--dynamic-accent', solidAccent);
+            modulePicametr.style.setProperty('--local-glow', dimAccent);
+            dynamicBg.style.background = `radial-gradient(circle at 50% 0%, hsla(${hue}, 80%, 40%, 0.15) 0%, transparent 70%)`;
             
-            // Glow pro Píča metr kartu
-            cardPicametr.style.setProperty('--local-glow', dimAccent);
+            // Barva čísla
+            output.style.color = solidAccent;
+            output.style.textShadow = `0 0 30px ${dimAccent}`;
 
-            titleAccent.style.backgroundImage = `linear-gradient(90deg, ${solidAccent}, ${neonAccent})`;
-            output.style.textShadow = `0 0 40px ${solidAccent}, 0 0 15px rgba(255,255,255,0.4)`;
+            // Ticker barva nahoře
+            ticker.style.backgroundColor = solidAccent;
 
+            // Komentář
             commentDisplay.innerText = radimComments[val];
-            gsap.fromTo(commentDisplay, { opacity: 0, y: 5 }, { opacity: 1, y: 0, duration: 0.2, delay: 0.05 });
-            gsap.to(output, { scale: 1 + (val * 0.02), duration: 0.3, ease: "back.out(1.7)" });
+            gsap.fromTo(commentDisplay, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.3 });
+            gsap.to(output, { scale: 1 + (val * 0.015), duration: 0.3, ease: "back.out(1.5)" });
 
-            if (val <= 2) {
-                labelMin.style.color = solidAccent;
-                labelMin.style.textShadow = `0 0 10px ${solidAccent}`;
-            } else { labelMin.style.color = ""; labelMin.style.textShadow = "none"; }
-
-            if (val >= 8) {
-                labelMax.style.color = solidAccent;
-                labelMax.style.textShadow = `0 0 10px ${solidAccent}`;
-            } else { labelMax.style.color = ""; labelMax.style.textShadow = "none"; }
+            // Zvýraznění krajních popisků
+            labelMin.style.color = val <= 2 ? solidAccent : "";
+            labelMax.style.color = val >= 8 ? solidAccent : "";
         }
 
         slider.addEventListener('input', updatePageColors);
         updatePageColors();
 
-        // --- 3. LOGIKA PRO KOLO VÝMLUV ---
+        // --- KOLO VÝMLUV LOGIKA ---
         const excuses = [
-            { short: "NEOTRAVUJU", full: "Nebudu otravovat, beztak mě tam nechcete." },
-            { short: "SPÁNEK", full: "Potřebuju se vyspat, včera jsem hrál do tří do rána." },
-            { short: "ZÍTRA", full: "Nevím jestli to stihnu, tak kdyžtak zítra (nikdy)." },
-            { short: "ŠPATNĚ MI JE", full: "Není mi dobře, asi na mě leze chřipka z průvanu." },
-            { short: "BLBÁ ŠUNKA", full: "Nedám ti pusu, protože jsem jedl blbou šunku." },
-            { short: "SRAČKA", full: "Mám sračku jak bič, nemůžu se odlepit od hajzlu." },
-            { short: "RYBIČKY", full: "Zapomněl jsem vyvenčit rybičky, je to akutní." },
-            { short: "KLÍČE", full: "Ztratil jsem klíče od bytu a bojím se jít ven." }
+            { short: "SPÁNEK", full: "Potřebuju se vyspat, hrál jsem dotu do 4 do rána a bolí mě očíčko." },
+            { short: "ŠUNKA", full: "Nedám ti pusu, jedl jsem včera zkaženou šunku z akce." },
+            { short: "NEOTRAVUJU", full: "Nebudu otravovat, beztak mě tam nechcete a všichni mě nesnáší." },
+            { short: "ZÍTRA", full: "Nevím jestli to stihnu. Tak kdyžtak zítra... (Překlad: Už se nikdy neozvu)." },
+            { short: "PRŮJEM", full: "Nemůžu přijít, mám výbušný průjem. Nechci o tom mluvit." },
+            { short: "RÝMIČKA", full: "Není mi dobře. Foukl na mě vítr a myslím, že umírám na mužskou rýmičku." },
+            { short: "ZAPOMNĚL JSEM", full: "Úplně mi to vypadlo, promiň, ztratil jsem pojem o čase i prostoru." },
+            { short: "MÁM PRÁCI", full: "Strašně moc práce, kámo. (Reálně scroluje TikTok na hajzlu)." }
         ];
 
         const wheel = document.getElementById("wheel");
         const numSlices = excuses.length;
         const sliceAngle = 360 / numSlices;
-        
         let gradientStops = [];
+
         excuses.forEach((excuse, i) => {
             const start = i * sliceAngle;
             const end = (i + 1) * sliceAngle;
-            // Dvě střídající se barvy pro výseče - tmavě fialová a lehce světlejší
-            const color = i % 2 === 0 ? '#2d0a40' : '#1a042e'; 
+            // Fialovo-růžové střídání pruhů
+            const color = i % 2 === 0 ? '#3b0764' : '#500724'; 
             gradientStops.push(`${color} ${start}deg ${end}deg`);
 
-            // Popisek na kolo
             const label = document.createElement('div');
-            // Vycentrujeme a otočíme
-            label.className = 'absolute w-[50%] h-[20px] top-1/2 left-1/2 origin-left text-white font-bold text-xs md:text-sm tracking-widest flex items-center pl-4 md:pl-8 pointer-events-none wheel-slice-text';
+            label.className = 'absolute w-[50%] h-[20px] top-1/2 left-1/2 origin-left text-white/90 font-bold text-[10px] md:text-xs tracking-[0.1em] flex items-center pl-4 md:pl-6 pointer-events-none wheel-slice-text';
             
-            // Conic-gradient začíná 0deg = nahoře (12 hodin).
-            // HTML transform rotate 0deg = vpravo (3 hodiny).
-            // Posuneme o -90 stupňů, aby text lícoval přesně s gradientem.
             const textAngle = start + (sliceAngle / 2) - 90;
             label.style.transform = `translateY(-50%) rotate(${textAngle}deg)`;
             label.innerText = excuse.short;
@@ -386,7 +325,6 @@
             wheel.appendChild(label);
         });
 
-        // Vykreslení gradientu
         wheel.style.background = `conic-gradient(${gradientStops.join(', ')})`;
 
         let currentRotation = 0;
@@ -397,8 +335,9 @@
         spinBtn.addEventListener('click', () => {
             if (isSpinning) return;
             isSpinning = true;
+            spinBtn.innerText = "LOSUJU...";
+            spinBtn.classList.add("opacity-50", "cursor-not-allowed");
 
-            // Kolečko se otočí 5x až 10x navíc + nějaký náhodný úhel navrch
             const spins = 5 + Math.random() * 5; 
             const extraAngle = Math.random() * 360;
             currentRotation += (spins * 360) + extraAngle;
@@ -406,28 +345,26 @@
             gsap.to(wheel, {
                 rotation: currentRotation,
                 duration: 4,
-                ease: "power4.out", // Na konci krásně zpomalí
+                ease: "power4.out",
                 onComplete: () => {
                     isSpinning = false;
+                    spinBtn.innerText = "GENEROVAT DALŠÍ";
+                    spinBtn.classList.remove("opacity-50", "cursor-not-allowed");
                     
-                    // Zjistíme, kde se kolo zastavilo. 
-                    // Ukazatel je nahoře (pozice odpovídající úhlu 0 v našem gradientu).
                     const normalizedRotation = currentRotation % 360;
                     const winningAngle = (360 - normalizedRotation) % 360;
                     const winningIndex = Math.floor(winningAngle / sliceAngle);
 
                     const winner = excuses[winningIndex];
-                    excuseDisplay.innerText = `"${winner.full}"`;
+                    excuseDisplay.innerHTML = `<span class="text-pink-400">"${winner.full}"</span>`;
                     
-                    // Malá animace zobrazení textu
                     gsap.fromTo(excuseDisplay, 
-                        { opacity: 0, scale: 0.9, color: '#ec4899' }, 
-                        { opacity: 1, scale: 1, color: '#e5e7eb', duration: 0.4 }
+                        { opacity: 0, scale: 0.9, y: 10 }, 
+                        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(2)" }
                     );
                 }
             });
         });
     </script>
 </body>
-
 </html>
